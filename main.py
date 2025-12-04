@@ -6,18 +6,26 @@ from flask import Flask
 from threading import Thread
 
 # ==================== Flask – לשמור על ה-Repl ער ====================
-flask_app = Flask('')
+flask_app = Flask(__name__)
 
-@flask_app.route('/')
-def keep_alive():
-    print("UptimeRobot ping received! Bot is ALIVE!")  # ← תראה את זה כל 5 דקות
+# Replit עושה פינג ל-root "/" – אסור להדפיס כאן
+@flask_app.route("/")
+def home():
     return "OK", 200
 
+# רק UptimeRobot ישלח לכאן
+@flask_app.route("/uptime")
+def uptime_ping():
+    print("REAL UptimeRobot ping received!")  # ← הודעה אמיתית!
+    return "ALIVE", 200
+
+
 def run_flask():
-    flask_app.run(host='0.0.0.0', port=8080)
+    flask_app.run(host="0.0.0.0", port=8080, debug=False)
+
 
 Thread(target=run_flask, daemon=True).start()
-print("Web server started – pings every 5 min")
+print("Flask server running on / and /uptime")
 
 # ==================== הבוט שלך ====================
 load_dotenv()
