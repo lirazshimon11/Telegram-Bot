@@ -1,33 +1,14 @@
 import os
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-from flask import Flask
-from threading import Thread
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
 
-# ==================== Flask – לשמור על ה-Repl ער ====================
-flask_app = Flask(__name__)
-
-# Replit עושה פינג ל-root "/" – אסור להדפיס כאן
-@flask_app.route("/")
-def home():
-    return "OK", 200
-
-# רק UptimeRobot ישלח לכאן
-@flask_app.route("/uptime")
-def uptime_ping():
-    print("REAL UptimeRobot ping received!")  # ← הודעה אמיתית!
-    return "ALIVE", 200
-
-
-def run_flask():
-    flask_app.run(host="0.0.0.0", port=8080, debug=False)
-
-
-Thread(target=run_flask, daemon=True).start()
-print("Flask server running on / and /uptime")
-
-# ==================== הבוט שלך ====================
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -35,24 +16,27 @@ SEPARATOR_TEXT = "אאאאאאאאאאאאאאאאאאאאאאאאאאאאאאא
 TRIGGER = "."
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("הבוט פעיל.\nשלח נקודה כדי ליצור חוצץ.")
+    await update.message.reply_text(
+        "הבוט פעיל.\nשלח נקודה (.) כדי ליצור מפריד."
+    )
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text.strip() == TRIGGER:
         await update.message.chat.send_message(SEPARATOR_TEXT)
         try:
             await update.message.delete()
-        except:
+        except Exception:
             pass
 
 def main():
     application = ApplicationBuilder().token(TOKEN).build()
 
     application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    application.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text)
+    )
 
-    print("Bot is starting...")
-    # זה מנקה עדכונים ישנים שגורמים לקונפליקט
+    print("Bot is running...")
     application.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
