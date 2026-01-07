@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -8,33 +9,34 @@ SEPARATOR_TEXT = "אאאאאאאאאאאאאאאאאאאאאאאאאאאאאאא
 TRIGGER = "."
 
 def handler(request):
+    # Telegram sends POST with JSON body
+    if getattr(request, "method", "").upper() != "POST":
+        return {"statusCode": 200, "body": "ok"}  # don't 405, just say ok
+
     try:
-        update = request.json()
+        body = request.body
+        if isinstance(body, (bytes, bytearray)):
+            body = body.decode("utf-8")
+        update = json.loads(body or "{}")
     except Exception:
-        return ("ok", 200)
+        return {"statusCode": 200, "body": "ok"}
 
     msg = update.get("message") or update.get("edited_message") or {}
     text = (msg.get("text") or "").strip()
     chat_id = (msg.get("chat") or {}).get("id")
     message_id = msg.get("message_id")
 
-    if not chat_id or not text:
-        return ("ok", 200)
-
-    if text == TRIGGER:
-        # send separator
+    if chat_id and text == TRIGGER:
         requests.post(
             f"{API}/sendMessage",
             json={"chat_id": chat_id, "text": SEPARATOR_TEXT},
-            timeout=8,
+            timeout=8
         )
-
-        # try to delete the trigger message
         if message_id is not None:
             requests.post(
                 f"{API}/deleteMessage",
                 json={"chat_id": chat_id, "message_id": message_id},
-                timeout=8,
+                timeout=8
             )
 
-    return ("ok", 200)
+    return {"statusCode": 200, "body": "ok"}
